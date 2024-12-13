@@ -7,9 +7,10 @@ const { initializeApp } = require('firebase/app');
 const session = require('express-session');
 const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } = require ("firebase/auth");
 
-let parser = bodyParser.urlencoded({extended: true});
 const app = express();
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({extended: true}));
+
 const port = 3000;
 
 
@@ -132,20 +133,18 @@ app.post('/logout', async (req, res) => {
 /*posts de mongo*/
 
 //crear posts
-app.post('/createPost', async (req,res) => {
-    const {title, content, user} = req.body;
-    
+app.post('/createPost', async (req,res) => {    
     try{
         const collection = db.collection('posts');
         const result = await collection.insertOne({ 
-            title: title, 
-            content: content,
-            user: user
+            title: req.body.title,
+            content: req.body.content,
+            user: req.body.user
          });
         res.status(201).send({
-            title: title,
-            content: content,
-            user: user,
+            title: req.body.title,
+            content: req.body.content,
+            user: req.body.user,
             message: "Post Creado exitosamente"
         })
 
@@ -175,18 +174,18 @@ app.get("/listPost", async(req,res) =>{
 
 //editar post
 app.put("/editPost/:id", async (req,res) => {
-    const id = req.params.id;
-    const {newTitle, newContent, user} = req.body;
-
+    const id = req.params.id.replace(":","");
     try {
         const collection = db.collection('posts');
-        const objID = new ObjectId(id);
-
         const result = await collection.updateOne(
-            { id: objID },
-            { $set: {title: newTitle, content: newContent, user: user}  });
+            { _id: new ObjectId(id) },
+            { $set: {title: req.body.newTitle, 
+                content: req.body.newContent, 
+                user: req.body.user}  
+            });
 
             res.status(200).send({
+                result: resultado,
                 message: "Se modifico el post con exito!"
             })
 
@@ -199,12 +198,11 @@ app.put("/editPost/:id", async (req,res) => {
 
 //eliminar post
 app.delete("/deletePost/:id", async (req,res) => {
-    const id = req.params.id;
+    const id = req.params.id.replace(":","");
     try{
         const collection = db.collection('posts');
-        const objID = new ObjectId(id);
         const result = await collection.deleteOne(
-            {id: objID}
+            { _id: new ObjectId(id)}
         );
 
         if (result.deletedCount > 0) {
