@@ -128,7 +128,23 @@ app.post('/logout', async (req, res) => {
 
 
 /*posts de mongo*/
+app.post('/createPost', async (req,res) => {
+    const {title, content} = req.body;
+    
+    try{
+        client.db.Post.insertOne({title:title, content:content});
+        res.status(200).send({
+            title: title,
+            content: content,
+            message: "Post Creado exitosamente"
+        })
 
+    }catch(e){
+        res.status(401).send({
+            error: e.message
+        });
+    }
+})
 
 
 
