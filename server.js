@@ -10,7 +10,7 @@ const { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sig
 let parser = bodyParser.urlencoded({extended: true});
 const app = express();
 app.use(bodyParser.json());
-const port = 3001;
+const port = 3000;
 
 
 //configruacion de mongo
@@ -24,10 +24,13 @@ const client = new MongoClient(MONGO_URI, {
     }
 });
 
+let db;
 async function connect() {
     try {
         await client.connect()
         console.log("Conectado a la base de datos");
+        db = client.db("Examen2");
+
     } catch (e) {
         console.error("Error al conectar a la base de datos: ", e)
     }
@@ -124,7 +127,7 @@ app.post('/logout', async (req, res) => {
             error: e.message
         });
     }
-})
+});
 
 
 /*posts de mongo*/
@@ -132,7 +135,12 @@ app.post('/createPost', async (req,res) => {
     const {title, content} = req.body;
     
     try{
-        client.db.Post.insertOne({title:title, content:content});
+        if (!title || !content) {
+            return res.status(400).json({ error: 'Se requiere llenar toda la informacion' });
+        }
+
+        const collection = db.collection('posts');
+        const result = await collection.insertOne({ title, content });
         res.status(200).send({
             title: title,
             content: content,
@@ -144,7 +152,22 @@ app.post('/createPost', async (req,res) => {
             error: e.message
         });
     }
-})
+});
+
+app.get("/listPost", async(req,res) =>{
+    try{
+        const collection = db.collection('posts');
+        const lista = await collection.find().toArray();
+        res.status(200).send({
+            message: "Post: \n" + lista
+        })
+
+    }catch(e){
+        res.status(401).send({
+            error: e.message
+        });
+    }
+});
 
 
 
